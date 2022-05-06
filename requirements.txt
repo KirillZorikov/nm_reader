@@ -22,7 +22,6 @@ pycodestyle==2.8.0
 pyee==8.2.2
 PyJWT==2.3.0
 pyppeteer==1.0.2
-pyppeteer-stealth==2.7.3
 pyquery==1.4.3
 pytils==0.4.1
 pytz==2022.1

@@ -1,0 +1,34 @@
+{
+	"name": "vue-parcel",
+	"description": "Simple boilerplate for building static SPA's with VueJs 3.",
+	"license": "UNLICENSED",
+	"main": "app/app.js",
+	"repository": "https://github.com/npulidom/vue-parcel",
+	"scripts": {
+		"watch": "rm -rf dist && parcel app/index.html --dist-dir dist --cache-dir .parcel --no-source-maps",
+		"build": "rm -rf dist && parcel build app/index.html --dist-dir dist --cache-dir .parcel --no-source-maps --detailed-report 20",
+		"clean": "rm -rf dist .parcel"
+	},
+	"browserslist": "> 0.5%, last 2 versions, not dead",
+	"devDependencies": {
+		"@parcel/config-default": "~2.3.2",
+		"@parcel/core": "~2.3.2",
+		"@parcel/optimizer-cssnano": "~2.3.2",
+		"@parcel/transformer-pug": "~2.3.2",
+		"@parcel/transformer-stylus": "~2.3.2",
+		"@parcel/transformer-vue": "~2.3.2",
+		"@vue/component-compiler-utils": "~3.3.0",
+		"autoprefixer": "~10.4.2",
+		"cssnano": "~5.0.17",
+		"parcel-resolver-vue3-runtime": "~2.1.0",
+		"postcss": "~8.4.6",
+		"pug": "~3.0.2",
+		"stylus": "~0.57.0"
+	},
+	"dependencies": {
+		"modern-normalize": "~1.1.0",
+		"vue": "~3.2.31",
+		"vue-router": "~4.0.12",
+		"vuex": "~4.0.2"
+	}
+}

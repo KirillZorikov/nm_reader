@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+    <div id="app"></div>
+    {{ page_context | json_script:'page-context' }}
+
+    <script src="{% static 'index.bcf5e687.js' %}"></script>
+{% endblock %}
