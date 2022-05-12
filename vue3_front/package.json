@@ -26,6 +26,7 @@
 		"stylus": "~0.57.0"
 	},
 	"dependencies": {
+		"core-js": "^3.22.4",
 		"modern-normalize": "~1.1.0",
 		"vue": "~3.2.31",
 		"vue-router": "~4.0.12",
