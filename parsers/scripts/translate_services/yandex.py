@@ -60,7 +60,7 @@ async def choose_language(page: Page, blocks: dict, src: dict, dst: dict):
     lang_param = get_lang_param(page.url)
     if not lang_param.endswith(dst["code"]):
         await choose_language(page, blocks, src, dst)
-    await page.waitFor(300)
+    await page.waitFor(500)
 
 
 async def insert_data(page: Page, blocks: dict, data: list, **kwargs):

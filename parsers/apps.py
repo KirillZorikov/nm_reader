@@ -6,6 +6,6 @@ class ParsersConfig(AppConfig):
 
     def ready(self):
         ''' run the browser when the server starts '''
-        from parsers.scripts.browser import get_browser
+        from utils.browser import get_browser
 
         # get_browser()

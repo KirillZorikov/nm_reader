@@ -62,6 +62,7 @@ async def run_async2(func, timeout=TIMEOUT, *args, **kwargs):
     except Exception as e:
         return {
             'success': False,
+            'message': 'exception',
             'exception': e
         }
     return data

@@ -20,6 +20,10 @@ class ParserSlugQuerySet(models.QuerySet):
                     parser__translate_image_parser__isnull=False,
                     then='parser__translate_image_parser__slug'
                 ),
+                When(
+                    parser__novel_parser__isnull=False,
+                    then='parser__novel_parser__slug'
+                ),
             )
         )
 
@@ -35,6 +39,10 @@ class RelatedParserSlugQuerySet(models.QuerySet):
                 When(
                     translate_image_parser__isnull=False,
                     then='translate_image_parser__slug'
+                ),
+                When(
+                    novel_parser__isnull=False,
+                    then='novel_parser__slug'
                 ),
             )
         )
@@ -69,13 +77,13 @@ class ParserSettings(Preferences):
 
 @receiver(post_save, sender=ParserSettings)
 def post_save_parser_settings(sender, instance, *args, **kwargs):
-    from parsers.scripts.browser import (
-        kill_browser, return_running, run_browser, init_pages
+    from utils.browser import (
+        kill_browser, return_running, run_browser
     )
-    from parsers.models.browser import Browser
+    from parsers.models.browser import Browser, Page
     from parsers.utils import run_async2
 
-    browser = Browser.objects.last()
+    browser = Browser.objects.filter(type='Translate').last()
     if not browser:
         return
     running_browser = asyncio.run(run_async2(
@@ -92,4 +100,4 @@ def post_save_parser_settings(sender, instance, *args, **kwargs):
     wsEndpoint = asyncio.run(run_async2(run_browser))
     browser.wsEndpoint = wsEndpoint
     browser.save()
-    init_pages(browser)
+    Page.objects.all().delete()

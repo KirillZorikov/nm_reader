@@ -58,8 +58,8 @@ def init_pages(browser: Browser):
                     time.sleep(0.01)
 
 
-def check_recently_update():
-    browser = Browser.objects.last()
+def check_recently_update(type='Translate'):
+    browser = Browser.objects.filter(type=type).last()
     if browser:
         return browser.is_recently_updated, browser.wsEndpoint
     return None, None
@@ -156,12 +156,13 @@ def get_page(service_name: str, page_index=None) -> Page:
     return page
 
 
-def get_browser() -> Browser:
-    browser = Browser.objects.last()
+def get_browser(type='Translate') -> Browser:
+    browser = Browser.objects.filter(type=type).last()
     if not browser:
         wsEndpoint = asyncio.run(run_async2(run_browser))
         browser = Browser.objects.create(
             wsEndpoint=wsEndpoint,
+            type=type,
         )
         init_pages(browser)
         return browser
@@ -179,8 +180,9 @@ def get_browser() -> Browser:
     return browser
 
 
-def prepare_browser(service_name: str, page_index=None):
+def prepare_browser(service_name: str, page_index=None, **kwargs):
     browser = get_browser()
+    print(browser)
     page = ''
     while not page:
         try:
@@ -188,4 +190,5 @@ def prepare_browser(service_name: str, page_index=None):
         except OperationalError:
             pass
         time.sleep(0.5)
+    print(page)
     return browser, page

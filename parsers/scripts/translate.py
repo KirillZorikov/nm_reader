@@ -8,7 +8,7 @@ from pyppeteer.page import Page
 from parsers.scripts.translate_services import (
     deepl, yandex, google, yandex_image
 )
-from parsers.scripts.browser import run_browser
+from utils.browser import run_browser
 from parsers import utils
 
 
@@ -39,6 +39,8 @@ async def get_page(
     ignore_exception=True,
     reload=False,
 ):
+    print(url)
+    print()
     if not page_index:
         return await run_new_page(browser, url)
     try:
@@ -47,7 +49,9 @@ async def get_page(
         if reload:
             await page.reload()
         if urlparse(url).netloc not in page.url:
+            print('ttt')
             await page.goto(url)
+            print('ttt')
         return page
     except IndexError as error:
         if not ignore_exception:

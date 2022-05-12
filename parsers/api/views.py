@@ -22,11 +22,11 @@ from parsers.api.serializers import (
     ParserSerializer,
 )
 from parsers.scripts.translate import translate, solve_captcha
-from parsers.scripts.browser import (
-    prepare_browser, return_running, get_browser_pages
-)
 from parsers.utils import run_async2, get_captcha_data
 from parsers.models import Browser, Parser, Page
+from utils.browser import (
+    prepare_browser, return_running, get_browser_pages
+)
 
 
 class TranslateParserListAPIView(ListAPIView):
@@ -90,7 +90,7 @@ class TranslateAPIView(APIView):
 
         # prepare data to translate and lock page
         parser_data = ParserSerializer(instance=self.get_parser(service)).data
-        browser, page = prepare_browser(service, validated_data.get('page'))
+        browser, page = prepare_browser(service, validated_data.get('page'), type='Translate')
         result = asyncio.run(run_async2(
             translate,
             browser_endpoint=browser.wsEndpoint,

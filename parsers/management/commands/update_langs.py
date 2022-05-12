@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 from pyquery import PyQuery as pq
 
 from parsers.models import Language, Parser
-from parsers.scripts.browser import *
+from utils.browser import *
 from parsers.scripts.translate import get_browser as get_browser_inst
 from parsers.scripts.translate import get_page as get_page_inst
 from parsers.api.serializers import ParserSerializer

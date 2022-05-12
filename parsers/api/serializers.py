@@ -9,7 +9,7 @@ from parsers.models import (
     Parser, TranslateParser, Language, Captcha,
     Browser, Block, TranslateImageParser, Page,
 )
-from parsers.scripts.browser import check_page_open
+from utils.browser import check_page_open
 from parsers.utils import run_async2
 
 
@@ -112,8 +112,7 @@ class ParserSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        ret['blocks'] = OrderedDict(
-            {elm['name']: elm['css_selector'] for elm in ret['blocks']})
+        ret['blocks'] = {x['name']: x['css_selector'] for x in ret['blocks']}
         return ret
 
 

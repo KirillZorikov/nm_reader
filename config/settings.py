@@ -46,7 +46,10 @@ INSTALLED_APPS = [
     # Our apps
     'admintools',
     'parsers',
+    'novels',
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
