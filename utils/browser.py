@@ -14,7 +14,7 @@ from django.db import transaction
 from django.db.models import Q, QuerySet
 
 from parsers.models import Browser, Page, Parser, ParserSettings
-from parsers.utils import run_async2
+from translate.utils import run_async2
 
 
 MAX_TABS_PER_SERVICE = 6
@@ -30,6 +30,44 @@ async def get_browser_pages(endpoint: str) -> list:
     return await browser.pages()
 
 
+def create_pages(browser: Browser, service_name, count=0):
+    max_count = get_page_limits().get(service_name) or count
+    if count:
+        max_count = min(count, max_count)
+    pages_index = []
+    for _ in range(max_count):
+        asyncio.run(run_async2(make_new_page, endpoint=browser.wsEndpoint))
+        pages = asyncio.run(run_async2(
+            get_browser_pages, endpoint=browser.wsEndpoint))
+        page = ''
+        while not page:
+            try:
+                page = Page.objects.create(
+                    browser=browser,
+                    parser=Parser.objects.annotate_related_parser_slug().filter(
+                        related_parser_slug=service_name
+                    ).first(),
+                    index=len(pages) - 1
+                )
+                pages_index.append(page.index)
+            except OperationalError:
+                time.sleep(0.01)
+    return pages_index
+
+
+def check_pages_created(parser: Parser, service_name):
+    browser = Browser.objects.filter(type=parser.type).last()
+    if not browser:
+        return False
+    running_browser = asyncio.run(run_async2(
+        return_running,
+        endpoint=browser.wsEndpoint,
+    ))
+    if not isinstance(running_browser, PyppeteerBrowser):
+        return False
+    return parser.page_set.count() == get_page_limits().get(service_name)
+
+
 async def run_browser() -> str:
     kwargs = {
         'args': [
@@ -43,7 +81,7 @@ async def run_browser() -> str:
         'handleSIGTERM': False,
         'handleSIGHUP': False,
         'autoClose': True,
-        'headless': False,
+        'headless': True,
         'ignoreHTTPSErrors': True,
         'defaultViewport': {
             'width': 1280,
@@ -108,7 +146,7 @@ def get_page(browser: Browser, service_name: str) -> Page:
             index=count + 1,
             in_use=True,
         )
-        asyncio.run(run_async2(make_new_page, endpoint=browser.wsEndpoint))
+        # asyncio.run(run_async2(make_new_page, endpoint=browser.wsEndpoint))
         return page
 
     # not zero tabs => looking for free one
@@ -131,7 +169,7 @@ def get_page(browser: Browser, service_name: str) -> Page:
             index=count + 1,
             in_use=True,
         )
-        asyncio.run(run_async2(make_new_page, endpoint=browser.wsEndpoint))
+        # asyncio.run(run_async2(make_new_page, endpoint=browser.wsEndpoint))
         return page
     page.in_use = True
     page.save()
@@ -164,7 +202,7 @@ async def check_page_open(
     return check_url and check_captcha
 
 
-def get_browser(type) -> Browser:
+def get_browser(type, service_name) -> Browser:
     browser = Browser.objects.filter(type=type).last()
     if not browser:
         clear_page_table()
@@ -188,8 +226,19 @@ def get_browser(type) -> Browser:
     return browser
 
 
+def wait_until_page(endpoint, index):
+    page = ''
+    while not page:
+        pages = asyncio.run(run_async2(get_browser_pages, endpoint=endpoint))
+        if len(pages) > index:
+            page = pages[index]
+        else:
+            asyncio.run(run_async2(make_new_page, endpoint=endpoint))
+            time.sleep(0.5)
+
+
 def prepare_browser(service_name: str, page_index=None, type='Novel'):
-    browser = get_browser(type)
+    browser = get_browser(type, service_name)
     page = ''
     while not page:
         try:
@@ -197,5 +246,6 @@ def prepare_browser(service_name: str, page_index=None, type='Novel'):
         except OperationalError:
             pass
         time.sleep(0.5)
+    # wait_until_page(browser.wsEndpoint, page.index)
     print(f'PAGE - {page}')
     return browser, page
