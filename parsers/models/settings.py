@@ -81,7 +81,7 @@ def post_save_parser_settings(sender, instance, *args, **kwargs):
         kill_browser, return_running, run_browser
     )
     from parsers.models.browser import Browser, Page
-    from parsers.utils import run_async2
+    from translate.utils import run_async2
 
     browser = Browser.objects.filter(type='Translate').last()
     if not browser:

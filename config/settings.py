@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     # Our apps
     'admintools',
     'parsers',
+    'translate',
     'novels',
 ]
 

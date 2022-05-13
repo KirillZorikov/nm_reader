@@ -1,3 +1,5 @@
+import asyncio
+
 from urllib.parse import urlparse
 
 from pyppeteer import connect
@@ -5,11 +7,11 @@ from .pyppeteer_stealth import stealth
 from pyppeteer.browser import Browser
 from pyppeteer.page import Page
 
-from parsers.scripts.translate_services import (
+from translate.scripts.translate_services import (
     deepl, yandex, google, yandex_image
 )
 from utils.browser import run_browser
-from parsers import utils
+from translate import utils
 
 
 SERVICES = {
@@ -39,24 +41,23 @@ async def get_page(
     ignore_exception=True,
     reload=False,
 ):
-    print(url)
-    print()
+    # print('IN')
     if not page_index:
         return await run_new_page(browser, url)
-    try:
-        pages = await browser.pages()
-        page = pages[page_index]
-        if reload:
-            await page.reload()
-        if urlparse(url).netloc not in page.url:
-            print('ttt')
-            await page.goto(url)
-            print('ttt')
-        return page
-    except IndexError as error:
-        if not ignore_exception:
-            raise error
-        return await run_new_page(browser, url)
+    
+    pages = await browser.pages()
+    page = pages[page_index]
+    if reload:
+        await page.reload()
+    curr_urls = [page.url for page in await browser.pages()]
+    # print(curr_urls)
+    # # print(len(pages), page_index)
+    # print(page.url)
+    if urlparse(url).netloc not in page.url:
+        # print('NEWW')
+        await page.goto(url)
+    # print(page.url)
+    return page
 
 
 async def translate(
@@ -72,12 +73,13 @@ async def translate(
     # prepare_browser_and_page
     browser = await get_browser(browser_endpoint)
     reload = kwargs.get('reload') or False
+    
     page = await get_page(
         browser, parser_data['related_parser']['url'],
         page_index, reload=reload
     )
     await page.setViewport({'width': 1280, 'height': 720})
-
+    
     # check_captcha
     if 'yandex' in service and 'showcaptcha' in page.url:
         image_url = await yandex.get_captcha_image(
@@ -112,10 +114,10 @@ async def translate(
     result = await getattr(SERVICES[service], 'get_translated_data')(
         page, parser_data['blocks']
     )
-
+    
     # clear_data
     await getattr(SERVICES[service], 'clear_data')(page, parser_data['blocks'])
-
+    
     return {
         'success': True,
         'message': 'translated successfully',

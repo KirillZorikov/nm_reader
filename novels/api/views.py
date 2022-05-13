@@ -22,7 +22,7 @@ from novels.api.serializers import (
 from novels.utils import prepare_services_response
 from novels.scripts.novel import get_resource_data
 from parsers.models import NovelParser, Resource
-from parsers.utils import run_async2
+from translate.utils import run_async2
 from utils.browser import (
     prepare_browser, return_running, get_browser_pages
 )

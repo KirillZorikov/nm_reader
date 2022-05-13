@@ -1,11 +1,11 @@
 import asyncio
-from tkinter import N
 from urllib.parse import urlparse, quote
 
 from pyppeteer.page import Page
+from pyppeteer.browser import Browser
 
-from parsers.scripts.pyppeteer_stealth import stealth
-from parsers.scripts.translate import get_browser
+from translate.scripts.pyppeteer_stealth import stealth
+from translate.scripts.translate import get_browser
 from novels.scripts import common
 from utils.pyppeteer import intercept_resource, intercept_request_data
 from utils.url import add_url_params, is_absolute
@@ -34,9 +34,11 @@ async def get_page(
     browser, url: str, page_index,
     resourses_to_intercept=None, search_data=None, search_param=None
 ):
-    print(url)
     pages = await browser.pages()
-    page = pages[page_index]
+    try:
+        page = pages[page_index]
+    except IndexError:
+        page = await browser.newPage()
     if search_data:
         kwargs = {'add_intercept': intercept_resource,
                   'type': resourses_to_intercept}
@@ -46,7 +48,9 @@ async def get_page(
     elif resourses_to_intercept is not None:
         print(resourses_to_intercept)
         await set_interception_res(page, resourses_to_intercept)
+    print(url)
     await page.goto(url)
+    print('COMPLETE')
     return page
 
 
