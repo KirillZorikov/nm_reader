@@ -18,6 +18,8 @@ async def intercept_resource(request, type):
             'status': 200,
             'body': 'foo'
         })
+    elif request.isNavigationRequest() and len(request.redirectChain) != 0:
+        await request.abort()
     else:
         await request.continue_()
 
