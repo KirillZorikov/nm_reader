@@ -10,11 +10,17 @@ class NovelParser(AbstractParser):
         help_text='novel site url',
         max_length=100,
     )
-    icon = models.ImageField(
+    logo = models.ImageField(
         upload_to='site_icons/',
         help_text='site icon',
         blank=True,
         null=True,
+    )
+    main_language = models.ForeignKey(
+        'SiteLanguage',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
     )
 
     class Meta:

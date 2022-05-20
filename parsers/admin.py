@@ -33,11 +33,6 @@ class ResourceInline(admin.StackedInline):
     extra = 0
 
 
-class SiteLanguageInline(admin.StackedInline):
-    model = SiteLanguage
-    extra = 0
-
-
 class SearchInline(admin.StackedInline):
     model = Search
     extra = 0
@@ -50,8 +45,7 @@ class ParserAdmin(admin.ModelAdmin):
         'parser_name',
     )
     inlines = (
-        BlockInline, CaptchaInline, LanguageInline, 
-        SiteLanguageInline, SearchInline,
+        BlockInline, CaptchaInline, LanguageInline, SearchInline,
     )
 
     def parser_name(self, obj):
@@ -110,3 +104,12 @@ class ResourceAdmin(admin.ModelAdmin):
         'name',
     )
     inlines = (BlockInline,)
+
+
+@admin.register(SiteLanguage)
+class SiteLanguageAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'code',
+        'name',
+    )

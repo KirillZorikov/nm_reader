@@ -16,11 +16,11 @@ class BlockSerializer(serializers.ModelSerializer):
 
 class NovelServiceSerializer(serializers.ModelSerializer):
     code = serializers.CharField(
-        source='parser.sitelanguage_set.all.main.code')
+        source='main_language.code')
 
     class Meta:
         model = NovelParser
-        fields = ('name', 'url', 'slug', 'icon', 'code')
+        fields = ('name', 'url', 'slug', 'logo', 'code')
 
 
 class ResourceSerializer(serializers.ModelSerializer):
@@ -54,7 +54,7 @@ class SearchPageSerializer(ResourceFullSerializer):
     use_POST = serializers.BooleanField(
         source='novel_parser.parser.search.use_POST'
     )
-    encoding = serializers.BooleanField(
+    encoding = serializers.CharField(
         source='novel_parser.parser.search.encoding'
     )
 
@@ -84,3 +84,14 @@ class ChapterIncomeSerializer(serializers.Serializer):
     novel_id = serializers.CharField()
     chapter_id = serializers.CharField()
     page_num = serializers.CharField(required=False)
+
+
+class ChapterListIncomeSerializer(serializers.Serializer):
+    novel_id = serializers.CharField()
+    page_num = serializers.CharField(required=False)
+
+
+class SiteLanguageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SiteLanguage
+        fields = ('name', 'code', 'flag')

@@ -1,6 +1,10 @@
 from pyppeteer.page import Page
 
-from novels.utils import get_data_by_fields, split_by_fields
+from novels.utils import (
+    get_data_by_fields, 
+    split_by_fields, 
+    get_additional_info,
+)
 
 TITLE_FIELDS = [
     'title', 'author', 'author_link',
@@ -23,4 +27,5 @@ async def get_novel_page_data(page: Page, blocks: dict, **kwargs):
     data['chapter_list_data'] = split_by_fields(await get_data_by_fields(
         page, blocks, kwargs['url'], CHAPTER_LIST_FIELDS
     ))
+    data.update(get_additional_info(**kwargs))
     return data

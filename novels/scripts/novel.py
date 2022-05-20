@@ -7,6 +7,7 @@ from pyppeteer.browser import Browser
 from translate.scripts.pyppeteer_stealth import stealth
 from translate.scripts.translate import get_browser
 from novels.scripts import common
+from novels.utils import get_string_format_keys
 from utils.pyppeteer import intercept_resource, intercept_request_data
 from utils.url import add_url_params, is_absolute
 
@@ -49,7 +50,7 @@ async def get_page(
         print(resourses_to_intercept)
         await set_interception_res(page, resourses_to_intercept)
     print(url)
-    await page.goto(url)
+    
     print('COMPLETE')
     return page
 
@@ -66,9 +67,10 @@ def get_page_url(**kwargs):
 
     # add params to url
     url = kwargs['url']
-    data = kwargs.get('data')
     if not is_absolute(url):
-        url += kwargs['urn'] if not data else kwargs['urn'].format(data=data)
+        keys = get_string_format_keys(kwargs['urn'])
+        format_data = {key: kwargs.get(key) for key in keys}
+        url += kwargs['urn'].format(**format_data)
     if params:
         url = add_url_params(url, params)
     
@@ -80,16 +82,19 @@ async def get_resource_data(**kwargs):
     # print(kwargs)
     browser = await get_browser(kwargs['browser_endpoint'])
     use_POST = kwargs.get('use_POST')
+    url = get_page_url(**kwargs)
 
     page = await get_page(
-        browser, get_page_url(**kwargs), kwargs['page_index'],
+        browser, url, kwargs['page_index'],
         resourses_to_intercept=kwargs['intercept_page_res'],
         search_data=kwargs.get('keywords') if use_POST else None,
         search_param=kwargs.get('search_query_param') if use_POST else None,
     )
+    await stealth(page)
+    await page.goto(url)
     await page.setViewport({'width': 1280, 'height': 720})
 
-    await stealth(page)
+    
     return await getattr(common, f'get_{kwargs["name"]}_data')(
         page=page,
         **kwargs

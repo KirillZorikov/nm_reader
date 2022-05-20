@@ -15,6 +15,7 @@ from utils.async_ import run_async
 @api_view(('POST',))
 @permission_classes((AllowAny,))
 def init_pages(request):
+    # return Response(status=status.HTTP_200_OK)
     serializer = InitPagesSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     validated_data = serializer.validated_data

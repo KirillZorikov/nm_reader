@@ -92,10 +92,6 @@ class AbstractParser(CoreModel):
 
 class SiteLanguage(CoreModel):
     """ language in which the site posts content """
-    parser = models.ForeignKey(
-        Parser,
-        on_delete=models.CASCADE,
-    )
     code = models.CharField(
         help_text='language code',
         max_length=10,
@@ -122,7 +118,7 @@ class SiteLanguage(CoreModel):
         verbose_name_plural = 'SiteLanguages'
 
     def __str__(self) -> str:
-        return f'{self.parser}__{self.code}'
+        return f'{self.code}'
 
 
 class Search(CoreModel):

@@ -38,25 +38,17 @@ async def get_page(
     browser: Browser,
     url: str,
     page_index=None,
-    ignore_exception=True,
     reload=False,
 ):
-    # print('IN')
     if not page_index:
         return await run_new_page(browser, url)
-    
     pages = await browser.pages()
-    page = pages[page_index]
+    try:
+        page = pages[page_index]
+    except IndexError:
+        return await browser.newPage()
     if reload:
         await page.reload()
-    curr_urls = [page.url for page in await browser.pages()]
-    # print(curr_urls)
-    # # print(len(pages), page_index)
-    # print(page.url)
-    if urlparse(url).netloc not in page.url:
-        # print('NEWW')
-        await page.goto(url)
-    # print(page.url)
     return page
 
 
@@ -73,11 +65,14 @@ async def translate(
     # prepare_browser_and_page
     browser = await get_browser(browser_endpoint)
     reload = kwargs.get('reload') or False
-    
+    url = parser_data['related_parser']['url']
     page = await get_page(
-        browser, parser_data['related_parser']['url'],
+        browser, url,
         page_index, reload=reload
     )
+    await stealth(page)
+    if urlparse(url).netloc not in page.url:
+        await page.goto(url)
     await page.setViewport({'width': 1280, 'height': 720})
     
     # check_captcha
@@ -95,7 +90,6 @@ async def translate(
         }
 
     # choose_language
-    await stealth(page)
     src = next(x for x in parser_data['languages']
                if x['code'] == kwargs['src'])
     dst = next(x for x in parser_data['languages']

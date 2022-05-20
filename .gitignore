@@ -149,5 +149,6 @@ temp_imgs
 chrome-linux
 translate_api
 example.py
+venv.sh
 
 media

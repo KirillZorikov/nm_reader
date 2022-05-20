@@ -34,7 +34,7 @@ class TranslateParserListAPIView(ListAPIView):
 
     def get_queryset(self):
         return Parser.objects.annotate_related_parser_slug().filter(
-            type__startswith='Translate'
+            type='Translate'
         )
 
 
@@ -101,10 +101,10 @@ class TranslateAPIView(APIView):
         ))
 
         # release page
-        if result['success'] or not 'captcha' in result['message']:
+        if not 'captcha' in result['message']:
             page.in_use = False
             page.save()
-        elif not result['success']:
+        if not result['success']:
             page.fails_count += 1
             page.save()
             raise result['exception']

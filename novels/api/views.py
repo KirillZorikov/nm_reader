@@ -1,12 +1,12 @@
 import asyncio
 import re
+from urllib.parse import urlparse
 
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from rest_framework.test import APIRequestFactory
 
 from novels.api.serializers import (
     NovelServiceSerializer,
@@ -18,32 +18,48 @@ from novels.api.serializers import (
     AuthorIncomeSerializer,
     SearchPageSerializer,
     ChapterIncomeSerializer,
+    SiteLanguageSerializer,
+    ChapterListIncomeSerializer,
 )
 from novels.utils import prepare_services_response
 from novels.scripts.novel import get_resource_data
-from parsers.models import NovelParser, Resource
+from parsers.models import NovelParser, Resource, SiteLanguage
 from translate.utils import run_async2
 from utils.browser import (
     prepare_browser, return_running, get_browser_pages
 )
-from utils.url import is_absolute, join_url
 
 
 class NovelServiceAPIView(APIView):
     def get(self, request):
         queryset = NovelParser.objects.all()
-        data = NovelServiceSerializer(queryset, many=True).data
+        data = NovelServiceSerializer(
+            queryset, 
+            context={'request': request}, 
+            many=True
+        ).data
         return Response(
             prepare_services_response(data),
             status=status.HTTP_200_OK
         )
 
 
+class SiteLanguageAPIView(APIView):
+    def get(self, request):
+        queryset = SiteLanguage.objects.all()
+        data = SiteLanguageSerializer(
+            queryset, 
+            context={'request': request}, 
+            many=True
+        ).data
+        return Response(data, status=status.HTTP_200_OK)
+
+
 class ResourceListAPIView(APIView):
     def get_novel_parser(self, lang_code, service):
         return get_object_or_404(
             NovelParser,
-            parser__sitelanguage__code=lang_code,
+            main_language__code=lang_code,
             slug=service
         )
 
@@ -72,6 +88,10 @@ class ResourceAPIView(APIView):
             'validate_income': ChapterIncomeSerializer,
             'data_serializer': ResourceFullSerializer,
         },
+        'chapter_list_page': {
+            'validate_income': ChapterListIncomeSerializer,
+            'data_serializer': ResourceFullSerializer,
+        },
     }
 
     def get_income_serializer_class(self, resource_name):
@@ -85,7 +105,7 @@ class ResourceAPIView(APIView):
             Resource,
             name=resource_name,
             novel_parser__slug=service,
-            novel_parser__parser__sitelanguage__code=lang_code,
+            novel_parser__main_language__code=lang_code,
         )
 
     def get(self, request, lang_code, service, resource_name):
@@ -140,7 +160,7 @@ class ServiceMainPageAPIView(APIView):
     def get_novel_parser(self, lang_code, service):
         return get_object_or_404(
             NovelParser,
-            parser__sitelanguage__code=lang_code,
+            main_language__code=lang_code,
             slug=service
         )
 
@@ -176,7 +196,8 @@ class ResourceFromUrlAPIView(APIView):
             find = re.findall(resource['urn_regex'], url)
             if find:
                 keys = self.get_string_keys(resource['urn'])
-                values = [x for x in find[0] if x]
+                find = find[0] if isinstance(find[0], tuple) else find
+                values = [x for x in find if x]
                 keys.append('page_num') if len(values) == 3 else ''
                 results.append((resource['name'], dict(zip(keys, values))))
         if results:
@@ -198,3 +219,31 @@ class ResourceFromUrlAPIView(APIView):
                 request, lang_code, service, resource, url=url
             )
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class ExtResourceFromUrlAPIView(ResourceFromUrlAPIView):
+    def search_lang_code_service(self, request, url: str):
+        from math import ceil
+
+        if 'http://' not in url and 'https://' not in url and not url.startswith('//'):
+            url = 'http://' + url
+        netloc = urlparse(url).netloc
+        arr = netloc.split('.')
+        host_name = arr[ceil(len(arr)/2) - 1]
+        novel_parser = NovelParser.objects.filter(slug=host_name).first()
+        if not novel_parser:
+            return None, host_name
+        lang_code = novel_parser.main_language.code
+        return lang_code, host_name, url
+
+    def post(self, request):
+        serializer = ResourceFromUrlIncomeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        url = serializer.validated_data['url']
+        lang_code, service, url = self.search_lang_code_service(request, url)
+        if not (lang_code and service):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        if hasattr(request.data, '_mutable'):
+            request.data._mutable = True
+        request.data.update({'url': url})
+        return super().post(request, lang_code, service)

@@ -5,7 +5,9 @@ from novels.api.views import (
     ResourceListAPIView,
     ResourceAPIView,
     ServiceMainPageAPIView,
-    ResourceFromUrlAPIView
+    ResourceFromUrlAPIView,
+    SiteLanguageAPIView,
+    ExtResourceFromUrlAPIView,
 )
 
 app_name = 'novels'
@@ -13,6 +15,15 @@ urlpatterns = [
     path(
         '',
         NovelServiceAPIView.as_view()
+    ),
+    path(
+        'langs',
+        SiteLanguageAPIView.as_view()
+    ),
+    path(
+        'from-url',
+        ExtResourceFromUrlAPIView.as_view(),
+        name='ext_execute_from_url'
     ),
     path(
         '<lang_code>/<service>',

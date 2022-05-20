@@ -76,6 +76,7 @@ async def run_browser() -> str:
             '--ignore-certificate-errors',
             '--disable-accelerated-2d-canvas',
             '--disable-gpu',
+            # '--user-data-dir=C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\User Data'
         ],
         'handleSIGINT': False,
         'handleSIGTERM': False,
@@ -89,6 +90,9 @@ async def run_browser() -> str:
         }
     }
     chrome_path = os.environ.get('CHROME_PATH', default='')
+    chrome_path = r'/usr/bin/google-chrome-stable'
+    # chrome_path = r'/mnt/c/Program Files/Google/Chrome/Application/chrome.exe'
+    # chrome_path = r'/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'
     if chrome_path:
         kwargs.update({'executablePath': chrome_path})
     browser = await launch(**kwargs)
