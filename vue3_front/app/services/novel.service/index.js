@@ -1,0 +1,1 @@
+export {default as NovelService} from './novel.service'

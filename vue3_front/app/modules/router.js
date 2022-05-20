@@ -1,14 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 // Views
-import Home    from "./../components/Home.vue"
-import Section from "./../components/Section.vue"
+import Home from "./../views/Home.vue"
+import Section from "./../views/Section.vue"
+import NovelService from "./../views/NovelService.vue"
+import NovelChapter from "./../views/NovelChapter.vue"
 
 // Routes
 const routes = [
 
-	{ path: '/', component: Home },
+	{ path: '/', name: 'Home', component: Home },
 	{ path: '/section', component: Section },
+	{ path: '/novel/:lang_code/:service_name', name: 'NovelService', component: NovelService, props: true },
+	{ path: '/novel/:lang_code/:service_name/:novel_id/:chapter_id', name: 'NovelChapter', component: NovelChapter, props: true },
 	// not found
 	{ path: '/:pathMatch(.*)*', redirect: "/" }
 ]
@@ -30,7 +34,7 @@ export default () => {
 			// transition delay
 			const ms = from.name ? 350 : 0
 
-			return new Promise(resolve => { setTimeout(() => { resolve(savedPosition ? savedPosition : { top: 0, left: 0 })}, ms) })
+			return new Promise(resolve => { setTimeout(() => { resolve(savedPosition ? savedPosition : { top: 0, left: 0 }) }, ms) })
 		}
 	})
 

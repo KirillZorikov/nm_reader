@@ -2,7 +2,7 @@
 	"name": "vue-parcel",
 	"description": "Simple boilerplate for building static SPA's with VueJs 3.",
 	"license": "UNLICENSED",
-	"main": "app/app.js",
+	"main": "app/entry.js",
 	"repository": "https://github.com/npulidom/vue-parcel",
 	"scripts": {
 		"watch": "rm -rf dist && parcel app/index.html --dist-dir dist --cache-dir .parcel --no-source-maps",
@@ -19,15 +19,23 @@
 		"@parcel/transformer-vue": "~2.3.2",
 		"@vue/component-compiler-utils": "~3.3.0",
 		"autoprefixer": "~10.4.2",
+		"buffer": "^6.0.3",
 		"cssnano": "~5.0.17",
 		"parcel-resolver-vue3-runtime": "~2.1.0",
 		"postcss": "~8.4.6",
+		"process": "^0.11.10",
 		"pug": "~3.0.2",
-		"stylus": "~0.57.0"
+		"stylus": "~0.57.0",
+		"tailwindcss": "^3.0.24"
 	},
 	"dependencies": {
+		"@popperjs/core": "^2.11.5",
+		"@swc/helpers": "^0.3.13",
+		"axios": "^0.27.2",
+		"bootstrap": "^5.1.3",
 		"core-js": "^3.22.4",
 		"modern-normalize": "~1.1.0",
+		"regenerator-runtime": "^0.13.9",
 		"vue": "~3.2.31",
 		"vue-router": "~4.0.12",
 		"vuex": "~4.0.2"
