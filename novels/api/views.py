@@ -131,7 +131,7 @@ class ResourceAPIView(APIView):
 
         result = asyncio.run(run_async2(
             get_resource_data,
-            page_index=page.index,
+            page_id=page.page_id,
             browser_endpoint=browser.wsEndpoint,
             lang_code=lang_code,
             url=url or resource.novel_parser.url,

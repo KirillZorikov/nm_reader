@@ -10,6 +10,7 @@ from novels.scripts import common
 from novels.utils import get_string_format_keys
 from utils.pyppeteer import intercept_resource, intercept_request_data
 from utils.url import add_url_params, is_absolute
+from utils.pyppeteer import get_pages_dict
 
 
 async def set_interception_res(page: Page, res):
@@ -32,12 +33,13 @@ async def unset_interception(page: Page):
 
 
 async def get_page(
-    browser, url: str, page_index,
+    browser, url: str, page_id,
     resourses_to_intercept=None, search_data=None, search_param=None
 ):
     pages = await browser.pages()
+    pages = get_pages_dict(pages)
     try:
-        page = pages[page_index]
+        page = pages[page_id]
     except IndexError:
         page = await browser.newPage()
     if search_data:
@@ -85,14 +87,14 @@ async def get_resource_data(**kwargs):
     url = get_page_url(**kwargs)
 
     page = await get_page(
-        browser, url, kwargs['page_index'],
+        browser, url, kwargs['page_id'],
         resourses_to_intercept=kwargs['intercept_page_res'],
         search_data=kwargs.get('keywords') if use_POST else None,
         search_param=kwargs.get('search_query_param') if use_POST else None,
     )
     await stealth(page)
-    await page.goto(url)
     await page.setViewport({'width': 1280, 'height': 720})
+    await page.goto(url)
 
     
     return await getattr(common, f'get_{kwargs["name"]}_data')(

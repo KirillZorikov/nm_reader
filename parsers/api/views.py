@@ -28,6 +28,6 @@ def init_pages(request):
     else:
         pages_index = list(Page.objects.annotate_parser_slug().filter(
             parser_slug=validated_data['service_slug']
-        ).values_list('index', flat=True))
+        ).values_list('page_id', flat=True))
 
     return Response(pages_index, status=status.HTTP_200_OK)

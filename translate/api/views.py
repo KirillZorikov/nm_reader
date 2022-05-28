@@ -22,20 +22,22 @@ from translate.api.serializers import (
 )
 from translate.scripts.translate import translate, solve_captcha
 from translate.utils import run_async2, get_captcha_data
-from parsers.models import Browser, Parser, Page
+from parsers.models import Browser, Parser, Page, TranslateParser
 from utils.browser import (
     prepare_browser, return_running, get_browser_pages
 )
+from utils.pyppeteer import get_pages_dict
 
 
 class TranslateParserListAPIView(ListAPIView):
     pagination_class = None
     serializer_class = TranslateParserListSerializer
+    queryset = TranslateParser.objects
 
-    def get_queryset(self):
-        return Parser.objects.annotate_related_parser_slug().filter(
-            type='Translate'
-        )
+    # def get_queryset(self):
+    #     return TranslateParser.objects.annotate_related_parser_slug().filter(
+    #         type='Translate'
+    #     )
 
 
 class TranslateParserRetrieveAPIView(RetrieveAPIView):
@@ -94,7 +96,7 @@ class TranslateAPIView(APIView):
             translate,
             browser_endpoint=browser.wsEndpoint,
             browser_id=browser.pk,
-            page_index=page.index,
+            page_id=page.page_id,
             parser_data=parser_data,
             service=service,
             **validated_data
@@ -111,6 +113,8 @@ class TranslateAPIView(APIView):
 
         if 'data' not in result:
             print(result)
+
+        # print(dict(zip(validated_data['data'], result['data']))
 
         return Response(
             result['data'], status=status.HTTP_200_OK
@@ -133,7 +137,7 @@ def captcha_solve(request):
     result = asyncio.run(run_async2(
         solve_captcha,
         browser_endpoint=browser.wsEndpoint,
-        page_index=validated_data['page_index'],
+        page_id=validated_data['page_id'],
         solve=validated_data['solution'],
         captcha_parser_data=captcha_parser_data,
     ))
@@ -163,13 +167,15 @@ def pages_status(request):
         get_browser_pages, 
         endpoint=browser.wsEndpoint
     ))
+    pages = get_pages_dict(pages)
     services = {}
     for page in Page.objects.annotate_parser_slug().values(
-        'parser_slug', 'index', 'in_use', 'fails_count'
+        'parser_slug', 'page_id', 'in_use', 'fails_count', 'id'
     ):
         page_info = {
-            'page_index': page['index'],
-            'current_url': pages[page['index']].url,
+            'id': page['id'],
+            'page_id': page['page_id'],
+            'current_url': pages[page['page_id']].url,
             'in_use': page['in_use'],
             'fails_count': page['fails_count']
         }

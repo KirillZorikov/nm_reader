@@ -59,3 +59,7 @@ async def get_elements_attr(page: Page, selector: str, attr: str) -> list:
     return await page.evaluate(f'''
         () => [...document.querySelectorAll(`{selector}`)].map(element => element.getAttribute(`{attr}`))
     ''')
+
+
+def get_pages_dict(pages):
+    return {page.mainFrame._id: page for page in pages}

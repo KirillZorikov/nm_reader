@@ -29,12 +29,12 @@ class LanguageFullSerializers(LanguageSerializers):
 
 
 class TranslateParserListSerializer(serializers.ModelSerializer):
-    slug = serializers.CharField(source='related_parser_slug')
+    languages = LanguageSerializers(source='parser.language_set', many=True)
 
     class Meta:
-        model = Parser
+        model = TranslateParser
         fields = (
-            'slug',
+            'slug', 'name', 'languages',
         )
 
 

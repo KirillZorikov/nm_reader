@@ -42,8 +42,9 @@ class Page(CoreModel):
     in_use = models.BooleanField(
         default=False,
     )
-    index = models.PositiveSmallIntegerField(
-        help_text='position at the browser\'s page list',
+    page_id = models.CharField(
+        max_length=100,
+        help_text='page id from the browser',
     )
     fails_count = models.PositiveSmallIntegerField(
         help_text='the count of fails to get translate from the page',
@@ -60,15 +61,15 @@ class Page(CoreModel):
         constraints = [
             UniqueConstraint(
                 'browser',
-                'index',
-                name='browser_page_index_unique',
+                'page_id',
+                name='browser_page_id_unique',
             ),
         ]
         verbose_name = 'Page'
         verbose_name_plural = 'Pages'
 
     def __str__(self) -> str:
-        return str(self.index)
+        return str(self.page_id)
 
 
 class Block(CoreModel):

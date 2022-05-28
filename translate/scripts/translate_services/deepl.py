@@ -21,11 +21,7 @@ async def click_blank_area(page: Page, blocks: dict):
 async def choose_language(page, blocks, src, dst):
 
     # choose src lang
-    try:
-        await click_element(page, blocks['source_button'], js_click=True)
-    except errors.ElementHandleError as e:
-        await page.screenshot({'path': 'choose_language.png'})
-        raise e
+    await click_element(page, blocks['source_button'], js_click=True)
     await page.waitForSelector(src['source'])
     await click_element(page, src['source'], js_click=True)
 
@@ -47,10 +43,11 @@ async def insert_data(page, blocks, data, **kwargs):
     await page.evaluate(f'''
         document.querySelector('{blocks['textarea']}').value = `{text}`;
     ''')
-    await page.click(blocks['textarea_container'], delay=200)
-    await page.keyboard.press('Enter', delay=200)
+    await page.click(blocks['textarea_container'], delay=50)
+    await page.keyboard.press('Enter', delay=50)
     await page.keyboard.up('Enter')
-    await page.keyboard.press('Backspace', delay=200)
+    await page.waitFor(200)
+    await page.keyboard.press('Backspace', delay=50)
     await page.keyboard.up('Backspace')
 
 

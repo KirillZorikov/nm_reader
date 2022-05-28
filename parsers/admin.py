@@ -79,7 +79,7 @@ class TranslateImageParserAdmin(admin.ModelAdmin):
 @admin.register(Page)
 class PageAdmin(admin.ModelAdmin):
     list_display = (
-        'index',
+        'page_id',
         'browser_id',
         'parser',
         'updated',

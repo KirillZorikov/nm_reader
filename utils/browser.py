@@ -15,6 +15,7 @@ from django.db.models import Q, QuerySet
 
 from parsers.models import Browser, Page, Parser, ParserSettings
 from translate.utils import run_async2
+from utils.pyppeteer import get_pages_dict
 
 
 MAX_TABS_PER_SERVICE = 6
@@ -22,7 +23,8 @@ MAX_TABS_PER_SERVICE = 6
 
 async def make_new_page(endpoint: str) -> PyppeteerPage:
     browser = await connect(browserWSEndpoint=endpoint)
-    await browser.newPage()
+    page = await browser.newPage()
+    return page
 
 
 async def get_browser_pages(endpoint: str) -> list:
@@ -34,25 +36,23 @@ def create_pages(browser: Browser, service_name, count=0):
     max_count = get_page_limits().get(service_name) or count
     if count:
         max_count = min(count, max_count)
-    pages_index = []
+    pages_id = []
     for _ in range(max_count):
-        asyncio.run(run_async2(make_new_page, endpoint=browser.wsEndpoint))
-        pages = asyncio.run(run_async2(
-            get_browser_pages, endpoint=browser.wsEndpoint))
+        br_page = asyncio.run(run_async2(make_new_page, endpoint=browser.wsEndpoint))
         page = ''
         while not page:
             try:
-                page = Page.objects.create(
+                page, _ = Page.objects.update_or_create(
                     browser=browser,
                     parser=Parser.objects.annotate_related_parser_slug().filter(
                         related_parser_slug=service_name
                     ).first(),
-                    index=len(pages) - 1
+                    page_id=br_page.mainFrame._id
                 )
-                pages_index.append(page.index)
+                pages_id.append(page.page_id)
             except OperationalError:
                 time.sleep(0.01)
-    return pages_index
+    return pages_id
 
 
 def check_pages_created(parser: Parser, service_name):
@@ -65,7 +65,9 @@ def check_pages_created(parser: Parser, service_name):
     ))
     if not isinstance(running_browser, PyppeteerBrowser):
         return False
-    return parser.page_set.count() == get_page_limits().get(service_name)
+    print(parser.page_set.count())
+    print(get_page_limits().get(service_name))
+    return parser.page_set.count() >= get_page_limits().get(service_name)
 
 
 async def run_browser() -> str:
@@ -144,13 +146,13 @@ def get_page(browser: Browser, service_name: str) -> Page:
 
     # zero tabs yet => open new
     if get_pages_by_service_name(service_name).count() == 0:
+        p = asyncio.run(run_async2(make_new_page, endpoint=browser.wsEndpoint))
         page = Page.objects.create(
             browser=browser,
             parser=parser,
-            index=count + 1,
+            page_id=p.mainFrame._id,
             in_use=True,
         )
-        # asyncio.run(run_async2(make_new_page, endpoint=browser.wsEndpoint))
         return page
 
     # not zero tabs => looking for free one
@@ -167,13 +169,13 @@ def get_page(browser: Browser, service_name: str) -> Page:
     pages_filter = pages.filter(~in_use | recently_updated)
     page = pages_filter.first()
     if not page:
+        p = asyncio.run(run_async2(make_new_page, endpoint=browser.wsEndpoint))
         page = Page.objects.create(
             browser=browser,
             parser=parser,
-            index=count + 1,
+            page_id=p.mainFrame._id,
             in_use=True,
         )
-        # asyncio.run(run_async2(make_new_page, endpoint=browser.wsEndpoint))
         return page
     page.in_use = True
     page.save()
@@ -192,15 +194,16 @@ def check_recently_update(type='Translate'):
 
 
 async def check_page_open(
-    page_index: int,
+    page_id: int,
     endpoint: str,
     service_url: str,
     yandex_captcha_check=False
 ) -> bool:
     pages = await get_browser_pages(endpoint)
-    if len(pages) <= page_index:
+    pages = get_pages_dict(pages)
+    if page_id not in pages:
         return False
-    page = pages[page_index]
+    page = pages[page_id]
     check_url = urlparse(service_url).netloc in urlparse(page.url).netloc
     check_captcha = 'showcaptcha' in page.url if yandex_captcha_check else True
     return check_url and check_captcha
@@ -230,17 +233,6 @@ def get_browser(type, service_name) -> Browser:
     return browser
 
 
-def wait_until_page(endpoint, index):
-    page = ''
-    while not page:
-        pages = asyncio.run(run_async2(get_browser_pages, endpoint=endpoint))
-        if len(pages) > index:
-            page = pages[index]
-        else:
-            asyncio.run(run_async2(make_new_page, endpoint=endpoint))
-            time.sleep(0.5)
-
-
 def prepare_browser(service_name: str, page_index=None, type='Novel'):
     browser = get_browser(type, service_name)
     page = ''
@@ -250,6 +242,5 @@ def prepare_browser(service_name: str, page_index=None, type='Novel'):
         except OperationalError:
             pass
         time.sleep(0.5)
-    # wait_until_page(browser.wsEndpoint, page.index)
     print(f'PAGE - {page}')
     return browser, page
