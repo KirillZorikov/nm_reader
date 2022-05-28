@@ -8,7 +8,7 @@ from pyppeteer.browser import Browser
 from pyppeteer.page import Page
 
 from translate.scripts.translate_services import (
-    deepl, yandex, google, yandex_image
+    deepl, yandex, google, yandex_image, google_api
 )
 from utils.browser import run_browser
 from utils.pyppeteer import get_pages_dict
@@ -20,6 +20,7 @@ SERVICES = {
     'yandex': yandex,
     'google': google,
     'yandex-image': yandex_image,
+    'google_api': google_api
 }
 
 
@@ -79,7 +80,7 @@ async def translate(
         await page.goto(url)
     # await page.setViewport({'width': 1280, 'height': 720})
     await page.screenshot({'path': f'temp_imgs/{page_id}_load_page.png'})
-    
+
     # check_captcha
     if 'yandex' in service and 'showcaptcha' in page.url:
         image_url = await yandex.get_captcha_image(
@@ -116,7 +117,7 @@ async def translate(
         page, parser_data['blocks']
     )
     await page.screenshot({'path': f'temp_imgs/{page_id}_wait_until_translate.png'})
-    
+
     # clear_data
     await getattr(SERVICES[service], 'clear_data')(page, parser_data['blocks'])
     await page.screenshot({'path': f'temp_imgs/{page_id}_clear_data.png'})
@@ -128,7 +129,7 @@ async def translate(
     os.remove(f'temp_imgs/{page_id}_insert_data.png')
     os.remove(f'temp_imgs/{page_id}_choose_language.png')
     os.remove(f'temp_imgs/{page_id}_load_page.png')
-    
+
     return {
         'success': True,
         'message': 'translated successfully',
@@ -152,3 +153,16 @@ async def solve_captcha(
     if not result['success']:
         result['message'] = 'captcha entered incorrectly'
     return result
+
+
+async def translate_api(service: str, data: list, src: str, dst: str) -> dict:
+    res = await getattr(SERVICES[service], 'get_translate')(data, src, dst)
+    if isinstance(res, list):
+        return {
+            'success': True,
+            'data': res
+        }
+    return {
+        'success': False,
+        'exception': res
+    }

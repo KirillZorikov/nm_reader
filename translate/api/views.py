@@ -20,7 +20,7 @@ from translate.api.serializers import (
     ImageTranslateSerializer,
     ParserSerializer,
 )
-from translate.scripts.translate import translate, solve_captcha
+from translate.scripts.translate import translate, solve_captcha, translate_api
 from translate.utils import run_async2, get_captcha_data
 from parsers.models import Browser, Parser, Page, TranslateParser
 from utils.browser import (
@@ -60,6 +60,15 @@ class TranslateParserRetrieveAPIView(RetrieveAPIView):
 
 class TranslateAPIView(APIView):
     parser = None
+    api_list = ['google_api']
+
+    def is_api_service(self, service):
+        return service.endswith('_api')
+
+    def get_service(self, service):
+        if self.is_api_service(service):
+            return service[:-4]
+        return service
 
     def set_parser(self, service):
         self.parser = Parser.objects.annotate_related_parser_slug().filter(
@@ -72,26 +81,45 @@ class TranslateAPIView(APIView):
         return self.parser
 
     def get_serializer_class(self, service):
+        service = self.get_service(service)
         parser = self.get_parser(service)
         if parser.type == 'Translate':
             return TextTranslateSerializer
         elif parser.type == 'TranslateImage':
             return ImageTranslateSerializer
 
-    def post(self, request, service, format=None):
+    def handle_api(self, service, data):
+        result = asyncio.run(run_async2(
+            translate_api,
+            service=service,
+            ** data
+        ))
+        if 'exception' in result:
+            raise result['exception']
+        return Response(
+            result['data'], status=status.HTTP_200_OK
+        )
+
+    def post(self, request, service: str, format=None):
 
         # validate income data
         serializer_class = self.get_serializer_class(service)
         serializer = serializer_class(
-            context={'slug': service},
+            context={'slug': self.get_service(service)},
             data=request.data
         )
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
 
+        if self.is_api_service(service):
+            if service not in self.api_list:
+                raise Http404
+            return self.handle_api(service, validated_data)
+
         # prepare data to translate and lock page
         parser_data = ParserSerializer(instance=self.get_parser(service)).data
-        browser, page = prepare_browser(service, validated_data.get('page'), type='Translate')
+        browser, page = prepare_browser(
+            service, validated_data.get('page'), type='Translate')
         result = asyncio.run(run_async2(
             translate,
             browser_endpoint=browser.wsEndpoint,
@@ -164,7 +192,7 @@ def pages_status(request):
             status=status.HTTP_200_OK
         )
     pages = asyncio.run(run_async2(
-        get_browser_pages, 
+        get_browser_pages,
         endpoint=browser.wsEndpoint
     ))
     pages = get_pages_dict(pages)
@@ -181,6 +209,6 @@ def pages_status(request):
         }
         services.setdefault(page['parser_slug'], []).append(page_info)
     return Response(
-            {'result': services},
-            status=status.HTTP_200_OK
-        )
+        {'result': services},
+        status=status.HTTP_200_OK
+    )

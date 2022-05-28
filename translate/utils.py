@@ -22,7 +22,7 @@ class CaptchaDetectedAPIException(APIException):
                 'message': self.default_detail,
                 'code': self.default_code,
                 'image': detail,
-                'page_index': int(kwargs.get('page_index') or '-1'),
+                'page_id': int(kwargs.get('page_id') or '-1'),
                 'service_slug': kwargs.get('service_name'),
                 'browser_id': kwargs.get('browser_id'),
             }
