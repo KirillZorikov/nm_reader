@@ -16,10 +16,11 @@ export default {
 
 <style>
 main.container {
-  margin: 30px auto 30px;
+  margin: 0 auto 0;
+  padding: 30px 0;
   min-height: 300px;
   width: 100%;
-  max-width: 1112px;
+  max-width: 1222px;
   box-sizing: border-box;
 }
 

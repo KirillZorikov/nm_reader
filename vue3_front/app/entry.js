@@ -11,7 +11,7 @@ globalThis.__VUE_PROD_DEVTOOLS__ = process.env.NODE_ENV == "development"
 
 import App from './views/App.vue'
 import router from './modules/router.js'
-import store from './modules/store.js'
+import {store} from './modules/store'
 import './index.css'
 import "bootstrap/dist/css/bootstrap.min.css"
 import "bootstrap"
@@ -20,7 +20,7 @@ const init = () => {
 
 	// new app instance
 	const app = createApp(App)
-		.use(store())
+		.use(store)
 		.use(router())
 
 	// mount

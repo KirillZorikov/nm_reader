@@ -1,13 +1,13 @@
 <template>
-  <header class="p-3 bg-dark text-white">
-    <div class="container">
+  <header class="px-3 py-2 bg-dark text-white">
+    <div class="wrapper mx-auto">
       <div
         class="
           d-flex
           flex-wrap
-          col-12 col-lg-auto
+          col-12 col-md-auto
           align-items-center
-          justify-content-center justify-content-lg-start
+          justify-content-center justify-content-md-start
         "
       >
         <a
@@ -45,43 +45,20 @@
           class="
             d-flex
             align-items-center
-            mb-2 mb-lg-0
+            mb-0
             ml-3
             text-white text-decoration-none
-            me-lg-auto me-md-4
+            me-auto
           "
         >
           <img src="../images/header.png" class="logo" alt="" />
         </a>
-
-        <!-- <ul
-          class="
-            nav
-            col-12 col-lg-auto
-            me-lg-auto
-            mb-2
-            justify-content-center
-            mb-md-0
-          "
-        >
-          <li><a href="#" class="nav-link px-2 text-secondary">Novel</a></li>
-          <li><a href="#" class="nav-link px-2 text-white">Manga</a></li>
-        </ul> -->
-
-        <!-- <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3">
-          <input
-            type="search"
-            class="form-control form-control-dark"
-            placeholder="Search..."
-            aria-label="Search"
-          />
-        </form> -->
         <div
           class="
             input-group
             w-auto
             col-12 col-lg-auto
-            mb-3 mb-lg-0
+            mb-0
             me-lg-3
             search
             bg-white
@@ -135,18 +112,7 @@
           </button>
         </div>
 
-        <div
-          class="
-            text-end
-            bg-light
-            p-1
-            rounded-circle
-            text-center
-            mb-3
-            ml-3
-            mb-lg-0
-          "
-        >
+        <div class="text-end bg-light p-1 rounded-circle text-center mb-0 ml-3">
           <a href="#" class="text-dark"><i class="far fa-user"></i></a>
         </div>
       </div>
@@ -226,9 +192,30 @@ export default {
 .search {
   min-width: 400px;
 }
-@media (max-width: 500px) {
+@media (max-width: 768px) {
   .search {
     min-width: 0;
+    max-width: 200px;
+  }
+  .search button[data-bs-toggle="dropdown"] {
+    display: none;
+  }
+  .search input {
+    border-top-left-radius: 0.25rem !important;
+    border-bottom-left-radius: 0.25rem !important;
+  }
+  .container {
+    max-width: 650px !important;
+  }
+}
+@media (max-width: 500px) {
+  .search {
+    max-width: 150px;
+  }
+}
+@media (min-width: 768px) {
+  .container {
+    max-width: 900px;
   }
 }
 .text-end {
@@ -237,5 +224,8 @@ export default {
 }
 .dropdown-item {
   cursor: pointer;
+}
+.wrapper {
+  max-width: 1222px;
 }
 </style>

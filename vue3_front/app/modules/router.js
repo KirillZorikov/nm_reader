@@ -1,4 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { TranslateService } from "../services/translate.services"
+import {store} from '../modules/store'
+import { default as VariousServices } from "../services/various.services"
 
 // Views
 import Home from "./../views/Home.vue"
@@ -37,6 +40,17 @@ export default () => {
 			return new Promise(resolve => { setTimeout(() => { resolve(savedPosition ? savedPosition : { top: 0, left: 0 }) }, ms) })
 		}
 	})
+
+	router.beforeEach(async (to, from, next) => {
+		if (store.state.translate_services.length) {
+			return next();
+		}
+		let fonts = await VariousServices.get_list_available_fonts();
+		store.commit('change_available_fonts', fonts);
+		let services = await TranslateService.getListTranslateServices();
+		store.commit('change_translate_services', services.data);
+		return next();
+	});
 
 	return router
 }

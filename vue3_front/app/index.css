@@ -1,3 +1,31 @@
-@tailwind base;
+/* @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+	font-family: "Macondo";
+	font-weight: 400;
+	font-style: normal;
+	font-display: auto;
+	unicode-range: U+000-5FF;
+	src: local("Macondo"),
+		url("./fonts/Macondo/Macondo-Regular.ttf") format("ttf"),
+}
+
+@font-face {
+	font-family: "Roboto";
+	font-weight: 400;
+	font-style: normal;
+	font-display: auto;
+	unicode-range: U+000-5FF;
+	src: local("Roboto"),
+		url("./fonts/Roboto/Roboto-Regular.ttf") format("ttf"),
+}
+
+@font-face {
+	font-family: "Roboto";
+	font-weight: 100;
+	font-style: normal;
+	font-display: auto; 
+	src: url("./fonts/Roboto/Roboto-Thin.ttf") format("ttf"),
+} */

@@ -41,7 +41,6 @@ export default {
     loadListNovelServices() {
       NovelService.getListNovelsServices().then((response) => {
         this.novel_services = response.data;
-        console.log(this.novel_services);
       });
     },
   },
