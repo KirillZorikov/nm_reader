@@ -1,6 +1,7 @@
-from operator import mod
 from django.db import models
 from django.db.models.query import QuerySet
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
 from pytils.translit import slugify
 
 from admintools.models import CoreModel
@@ -26,6 +27,21 @@ class Parser(CoreModel):
     type = models.CharField(
         max_length=50,
         choices=ParserType.choices,
+    )
+    max_pages_count = models.PositiveSmallIntegerField(
+        help_text='if set 0 the default value will be used',
+        validators=[
+            MaxValueValidator(8)
+        ],
+        default=0,
+    )
+    timeout = models.PositiveSmallIntegerField(
+        verbose_name='Timeout in seconds',
+        help_text='if set 0 the default value will be used',
+        validators=[
+            MaxValueValidator(60)
+        ],
+        default=0,
     )
     translate_parser = models.OneToOneField(
         'TranslateParser',
@@ -55,6 +71,13 @@ class Parser(CoreModel):
     def __str__(self) -> str:
         related_parser = self.get_related_parser()
         return related_parser.slug if related_parser else f'{self.pk}'
+
+    def save(self, *args, **kwargs):
+        if self.max_pages_count > 8:
+            raise ValidationError('Pages count must be located between 0 to 8')
+        if self.timeout > 60:
+            raise ValidationError('Timeout must be located between 0 to 8')
+        super().save(*args, **kwargs)
 
     def get_related_parser(self):
         if self.translate_parser:

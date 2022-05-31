@@ -50,7 +50,8 @@ class TimeoutAPIException(APIException):
         self.detail = _get_error_details(detail, code)
 
 
-async def run_async2(func, timeout=TIMEOUT, *args, **kwargs):
+async def run_async2(func, timeout=0, *args, **kwargs):
+    timeout = timeout or TIMEOUT
     try:
         data = await asyncio.wait_for(func(*args, **kwargs), timeout=timeout)
     except asyncio.TimeoutError:

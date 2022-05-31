@@ -1,3 +1,4 @@
+from ast import parse
 import asyncio
 from collections import OrderedDict
 
@@ -29,13 +30,26 @@ class LanguageFullSerializers(LanguageSerializers):
 
 
 class TranslateParserListSerializer(serializers.ModelSerializer):
+    timeout = serializers.IntegerField(source='parser.timeout')
+    max_pages = serializers.IntegerField(source='parser.max_pages_count')
     languages = LanguageSerializers(source='parser.language_set', many=True)
 
     class Meta:
         model = TranslateParser
         fields = (
             'slug', 'name', 'languages',
+            'timeout', 'max_pages',
         )
+
+    def to_representation(self, instance):
+        parser_data = super().to_representation(instance)
+        slug = instance.slug
+        if not slug.endswith('_api'):
+            return parser_data
+        parser = TranslateParser.objects.filter(slug=slug[:-4]).first()
+        data = super().to_representation(parser)
+        parser_data['languages'] = data['languages']
+        return parser_data
 
 
 class TranslateParserDetailSerializer(serializers.ModelSerializer):
@@ -97,6 +111,8 @@ class ParserSerializer(serializers.ModelSerializer):
             'blocks',
             'languages',
             'captcha_data',
+            'timeout',
+            'max_pages_count',
         )
 
     def get_related_parser(self, obj):

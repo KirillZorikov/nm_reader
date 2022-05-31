@@ -33,10 +33,11 @@ async def get_browser_pages(endpoint: str) -> list:
 
 
 def create_pages(browser: Browser, service_name, count=0):
-    max_count = get_page_limits().get(service_name) or count
+    max_count = count or get_max_pages_count()
     if count:
         max_count = min(count, max_count)
     pages_id = []
+    print(max_count)
     for _ in range(max_count):
         br_page = asyncio.run(run_async2(make_new_page, endpoint=browser.wsEndpoint))
         page = ''
@@ -56,18 +57,18 @@ def create_pages(browser: Browser, service_name, count=0):
 
 
 def check_pages_created(parser: Parser, service_name):
+    limit = parser.max_pages_count or get_max_pages_count()
     browser = Browser.objects.filter(type=parser.type).last()
     if not browser:
-        return False
+        return False, limit
     running_browser = asyncio.run(run_async2(
         return_running,
         endpoint=browser.wsEndpoint,
     ))
     if not isinstance(running_browser, PyppeteerBrowser):
-        return False
-    print(parser.page_set.count())
-    print(get_page_limits().get(service_name))
-    return parser.page_set.count() >= get_page_limits().get(service_name)
+        return False, limit
+    page_count = parser.page_set.count()
+    return page_count >= limit, limit - page_count
 
 
 async def run_browser() -> str:
@@ -127,22 +128,15 @@ def get_pages_by_service_name(service_name: str) -> QuerySet:
     )
 
 
-def get_page_limits() -> dict:
-    parser_settings = ParserSettings.objects.first()
-    return {
-        'deepl': parser_settings.max_tab_deepl,
-        'yandex': parser_settings.max_tab_yandex,
-        'yandex-image': parser_settings.max_tab_yandex_image,
-        'google': parser_settings.max_tab_google,
-    }
+def get_max_pages_count():
+    return ParserSettings.objects.first().max_tabs
 
 
 @transaction.atomic
-def get_page(browser: Browser, service_name: str) -> Page:
+def get_page(browser: Browser, service_name: str, max_pages: int) -> Page:
     parser = Parser.objects.annotate_related_parser_slug().filter(
         related_parser_slug=service_name
     ).first()
-    count = Page.objects.filter(browser=browser).count()
 
     # zero tabs yet => open new
     if get_pages_by_service_name(service_name).count() == 0:
@@ -161,9 +155,10 @@ def get_page(browser: Browser, service_name: str) -> Page:
         updated__lte=timezone.now() - datetime.timedelta(seconds=timeout)
     )
     in_use = Q(in_use=True)
+    max_pages = max_pages or get_max_pages_count()
     if get_pages_by_service_name(service_name).filter(
         in_use & ~recently_updated
-    ).count() >= (get_page_limits().get(service_name) or MAX_TABS_PER_SERVICE):
+    ).count() >= max_pages:
         return
     pages = get_pages_by_service_name(service_name)
     pages_filter = pages.filter(~in_use | recently_updated)
@@ -233,12 +228,12 @@ def get_browser(type, service_name) -> Browser:
     return browser
 
 
-def prepare_browser(service_name: str, page_index=None, type='Novel'):
+def prepare_browser(service_name: str, type: str, max_pages=0):
     browser = get_browser(type, service_name)
     page = ''
     while not page:
         try:
-            page = get_page(browser, service_name)
+            page = get_page(browser, service_name, max_pages)
         except OperationalError:
             pass
         time.sleep(0.5)

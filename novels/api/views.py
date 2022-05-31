@@ -34,8 +34,8 @@ class NovelServiceAPIView(APIView):
     def get(self, request):
         queryset = NovelParser.objects.all()
         data = NovelServiceSerializer(
-            queryset, 
-            context={'request': request}, 
+            queryset,
+            context={'request': request},
             many=True
         ).data
         return Response(
@@ -48,8 +48,8 @@ class SiteLanguageAPIView(APIView):
     def get(self, request):
         queryset = SiteLanguage.objects.all()
         data = SiteLanguageSerializer(
-            queryset, 
-            context={'request': request}, 
+            queryset,
+            context={'request': request},
             many=True
         ).data
         return Response(data, status=status.HTTP_200_OK)
@@ -108,6 +108,11 @@ class ResourceAPIView(APIView):
             novel_parser__main_language__code=lang_code,
         )
 
+    def get_parser_settings(self, resource: Resource):
+        timeout = resource.novel_parser.parser.timeout
+        max_pages = resource.novel_parser.parser.max_pages_count
+        return timeout, max_pages
+
     def get(self, request, lang_code, service, resource_name):
         resource = self.get_resource(lang_code, service, resource_name)
         data = ResourceFullSerializer(resource).data
@@ -126,11 +131,16 @@ class ResourceAPIView(APIView):
         resource = self.get_resource(lang_code, service, resource_name)
         data_serializer_class = self.get_data_serializer_class(resource_name)
         resource_data = data_serializer_class(resource).data
+        timeout, max_pages = self.get_parser_settings(resource)
         browser, page = prepare_browser(
-            service, resource_data.get('page'), type='Novel')
-
+            service,
+            'Novel',
+            max_pages=max_pages
+        )
+        
         result = asyncio.run(run_async2(
             get_resource_data,
+            timeout=timeout,
             page_id=page.page_id,
             browser_endpoint=browser.wsEndpoint,
             lang_code=lang_code,
@@ -150,8 +160,7 @@ class ResourceAPIView(APIView):
 
         if 'exception' in result:
             raise result['exception']
-
-        # print(result)
+        
 
         return Response(result, status=status.HTTP_200_OK)
 

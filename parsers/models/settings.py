@@ -49,20 +49,8 @@ class RelatedParserSlugQuerySet(models.QuerySet):
 
 
 class ParserSettings(Preferences):
-    max_tab_deepl = models.PositiveSmallIntegerField(
-        help_text='how many tabs will be open for the deepl translator',
-        default=4,
-    )
-    max_tab_google = models.PositiveSmallIntegerField(
-        help_text='how many tabs will be open for the google translator',
-        default=4,
-    )
-    max_tab_yandex = models.PositiveSmallIntegerField(
-        help_text='how many tabs will be open for the yandex translator',
-        default=4,
-    )
-    max_tab_yandex_image = models.PositiveSmallIntegerField(
-        help_text='how many tabs will be open for the yandex-image translator',
+    max_tabs = models.PositiveSmallIntegerField(
+        help_text='how many tabs will be open for the services',
         default=4,
     )
     timeout = models.PositiveSmallIntegerField(
@@ -77,6 +65,7 @@ class ParserSettings(Preferences):
 
 @receiver(post_save, sender=ParserSettings)
 def post_save_parser_settings(sender, instance, *args, **kwargs):
+    return
     from utils.browser import (
         kill_browser, return_running, run_browser
     )

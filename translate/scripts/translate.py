@@ -157,7 +157,7 @@ async def solve_captcha(
 
 async def translate_api(service: str, data: list, src: str, dst: str) -> dict:
     res = await getattr(SERVICES[service], 'get_translate')(data, src, dst)
-    if isinstance(res, list):
+    if isinstance(res, dict):
         return {
             'success': True,
             'data': res

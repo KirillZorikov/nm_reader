@@ -63,7 +63,10 @@ class TranslateAPIView(APIView):
     api_list = ['google_api']
 
     def is_api_service(self, service):
-        return service.endswith('_api')
+        if service.endswith('_api'):
+            if service not in self.api_list:
+                raise Http404
+            return True
 
     def get_service(self, service):
         if self.is_api_service(service):
@@ -112,16 +115,18 @@ class TranslateAPIView(APIView):
         validated_data = serializer.validated_data
 
         if self.is_api_service(service):
-            if service not in self.api_list:
-                raise Http404
             return self.handle_api(service, validated_data)
 
         # prepare data to translate and lock page
         parser_data = ParserSerializer(instance=self.get_parser(service)).data
         browser, page = prepare_browser(
-            service, validated_data.get('page'), type='Translate')
+            service, 
+            type='Translate',
+            max_pages=parser_data['max_pages_count'],
+        )
         result = asyncio.run(run_async2(
             translate,
+            timeout=parser_data['timeout'],
             browser_endpoint=browser.wsEndpoint,
             browser_id=browser.pk,
             page_id=page.page_id,
@@ -142,10 +147,10 @@ class TranslateAPIView(APIView):
         if 'data' not in result:
             print(result)
 
-        # print(dict(zip(validated_data['data'], result['data']))
+        translate_dict = dict(zip(validated_data['data'], result['data']))
 
         return Response(
-            result['data'], status=status.HTTP_200_OK
+            translate_dict, status=status.HTTP_200_OK
         )
 
 

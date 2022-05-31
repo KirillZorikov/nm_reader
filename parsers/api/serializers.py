@@ -15,8 +15,19 @@ class InitPagesSerializer(serializers.Serializer):
         ).first()
         if not parser:
             raise ValidationError('wrong service_slug')
-        if check_pages_created(parser, attrs['service_slug']):
+        check, diff = check_pages_created(parser, attrs['service_slug'])
+        if check:
             attrs.update({'inited': True})
-            #raise ValidationError('already inited')
+        attrs.update({'diff': diff})
         attrs.update({'type': parser.type})
         return attrs
+
+
+class ServiceMaxPagesSerializer(serializers.Serializer):
+    service_slug = serializers.CharField()
+    pages_count = serializers.IntegerField()
+
+
+class ServiceTimeoutSerializer(serializers.Serializer):
+    service_slug = serializers.CharField()
+    timeout = serializers.IntegerField()
