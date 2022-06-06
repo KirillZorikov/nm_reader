@@ -8,9 +8,9 @@
 				</h1></a
 			>
 			<div class="col-lg-6 mx-auto">
-				<p class="chapter-name mb-4" v-if="chapter_name">
+				<span class="chapter-name mb-4 d-block" v-if="chapter_name">
 					{{ chapter_name }}
-				</p>
+				</span>
 				<div class="d-flex justify-content-center">
 					<button
 						type="button"
@@ -73,6 +73,11 @@
 				<template v-if="text.length && !loading">
 					<p v-for="(p, index) in text" :key="index">
 						{{ p }}
+						<button
+							class="btn p-0 border-0 text-replace shadow-none"
+						>
+							<Icon icon="ri:translate" />
+						</button>
 					</p>
 				</template>
 				<template v-if="author_note.length && !loading">
@@ -128,6 +133,7 @@ import { Icon } from "@iconify/vue";
 import googleTranslate from "@iconify-icons/mdi/google-translate";
 import settingsLine from "@iconify-icons/clarity/settings-line";
 import listUnordered from "@iconify-icons/codicon/list-unordered";
+import Chapter from "../models/novel.chapter";
 
 export default {
 	name: "NovelChapter",
@@ -151,6 +157,7 @@ export default {
 				settingsLine,
 				listUnordered,
 			},
+			current_chapter: "",
 			open_settings_collapses: ["style"],
 			response_data: "",
 			loading: false,
@@ -187,8 +194,11 @@ export default {
 			return this.$store.state.translate_chapter_settings.auto_translate;
 		},
 		translated() {
-			if (this.service in this.translated_text_data) {
-				return this.translated_text_data[this.service].translated;
+			if (this.current_chapter) {
+				return this.current_chapter.data.is_translated(
+					this.service,
+					this.dst
+				);
 			}
 		},
 		is_source_lang() {
@@ -204,77 +214,65 @@ export default {
 			);
 		},
 		next_link() {
-			let next_link;
-			if (this.response_data.next) {
-				next_link = this.response_data.next;
+			if (this.current_chapter) {
+				return this.current_chapter.data.next;
 			}
-			return next_link;
 		},
 		prev_link() {
-			let prev_link;
-			if (this.response_data.prev) {
-				prev_link = this.response_data.prev;
+			if (this.current_chapter) {
+				return this.current_chapter.data.next;
 			}
-			return prev_link;
 		},
 		title() {
-			let title = this.original_text_data.title;
-			if (
-				this.is_source_lang ||
-				!(this.service in this.translated_text_data)
-			) {
-				return title;
+			let title = "";
+			console.log(this.is_source_lang, this.current_text_lang);
+			if (this.current_chapter) {
+				title = this.current_chapter.data.get_title(
+					this.is_source_lang,
+					this.service,
+					this.dst
+				);
 			}
-			return this.translated_text_data[this.service].title || title;
+			return title;
 		},
 		chapter_name() {
-			let chapter_name = this.original_text_data.chapter_name;
-			if (
-				this.is_source_lang ||
-				!(this.service in this.translated_text_data)
-			) {
-				return chapter_name;
+			let chapter_name = "";
+			if (this.current_chapter) {
+				chapter_name = this.current_chapter.data.get_chapter_name(
+					this.is_source_lang,
+					this.service,
+					this.dst
+				);
 			}
-			return (
-				this.translated_text_data[this.service].data[chapter_name] ||
-				chapter_name
-			);
+			return chapter_name;
 		},
 		text() {
-			if (
-				this.is_source_lang ||
-				!(this.service in this.translated_text_data)
-			) {
-				return this.original_text_data.text;
+			let text = [];
+			if (this.current_chapter) {
+				text = this.current_chapter.data.get_text(
+					this.is_source_lang,
+					this.service,
+					this.dst
+				);
 			}
-			return Array.from(
-				{ length: this.original_text_data.text.length },
-				(_, i) =>
-					this.translated_text_data[this.service].data[
-						this.original_text_data.text[i]
-					] || this.original_text_data.text[i]
-			);
+			return text;
 		},
 		author_note() {
-			if (
-				this.is_source_lang ||
-				!(this.service in this.translated_text_data)
-			) {
-				return this.original_text_data.author_note;
+			let author_note = [];
+			if (this.current_chapter) {
+				author_note = this.current_chapter.data.get_author_note(
+					this.is_source_lang,
+					this.service,
+					this.dst
+				);
 			}
-			return Array.from(
-				{ length: this.original_text_data.author_note.length },
-				(_, i) =>
-					this.translated_text_data[this.service].data[
-						this.original_text_data.author_note[i]
-					] || this.original_text_data.author_note[i]
-			);
+			return author_note;
 		},
 	},
 	created() {
 		if (this.data) {
-			this.response_data = JSON.parse(this.data);
-			this.reset_state();
+			this.create_chapter(this.data);
+			this.response_data = this.current_chapter.data.data;
 			this.send_data_to_translate();
 		} else {
 			this.loadChapter();
@@ -283,26 +281,33 @@ export default {
 	methods: {
 		loadChapter() {
 			this.loading = true;
-			this.reset_state();
 			NovelService.getChapter(
 				this.lang_code,
 				this.service_name,
 				this.novel_id,
 				this.chapter_id
 			).then((response) => {
-				this.response_data = response.data;
 				this.loading = false;
+				this.create_chapter(response.data);
+				this.response_data = response.data;
 				this.send_data_to_translate();
 			});
 		},
 		loadChapterFromUrl(url) {
 			this.loading = true;
-			this.reset_state();
 			NovelService.getDataFromLink(url).then((response) => {
+				this.create_chapter(response.data);
 				this.response_data = response.data;
 				this.loading = false;
 				this.send_data_to_translate();
 			});
+		},
+		create_chapter(data) {
+			this.current_chapter = new Chapter({ data: data });
+			this.current_chapter.data.prepopulate_translated_text(
+				this.service,
+				this.dst
+			);
 		},
 		open_settings(collapses) {
 			this.open_settings_collapses = collapses;
@@ -314,73 +319,7 @@ export default {
 		try_again() {
 			this.translating_error = false;
 			this.current_text_lang = this.translate_chapter_settings.dst_code;
-			this.init_translated_text_data();
 			this.translateChapter();
-		},
-		send_data_to_translate() {
-			this.saveText(this.response_data);
-			if (this.auto_translate || this.is_destination_lang) {
-				this.translateChapter();
-			}
-		},
-		clear_translated_text_data() {
-			let current_service_data = this.translated_text_data[this.service];
-			this.translated_text_data = {};
-			if (typeof current_service_data === "object") {
-				this.translated_text_data[this.service] = current_service_data;
-			}
-		},
-		init_translated_text_data() {
-			let title = "";
-			if (this.service in this.translated_text_data) {
-				title = this.translated_text_data[this.service].title;
-			}
-			this.translated_text_data[this.service] = {
-				title: title,
-				data: {},
-				translated: false,
-			};
-			this.original_text_data.author_note
-				.concat(this.original_text_data.text, [
-					this.original_text_data.chapter_name,
-				])
-				.forEach((e, i) => {
-					this.translated_text_data[this.service].data[e] = "";
-				});
-		},
-		saveText(data) {
-			this.original_text_data.title =
-				"title" in data ? data.title : data.title_link.text;
-			this.original_text_data.chapter_name = data.name;
-			this.original_text_data.text = data.text
-				.split("\n")
-				.filter((n) => n)
-				.map((x) => x.trim());
-			this.original_text_data.author_note = data.author_note
-				? data.author_note
-						.split("\n")
-						.filter((n) => n)
-						.map((x) => x.trim())
-				: [];
-			this.init_translated_text_data();
-		},
-		reset_state() {
-			this.original_text_data = {
-				text: [],
-				author_note: [],
-				title: this.original_text_data.title,
-				chapter_name: "",
-			};
-			this.clear_translated_text_data();
-			this.init_translated_text_data();
-			this.translating_error = false;
-			if (this.auto_translate) {
-				this.current_text_lang =
-					this.translate_chapter_settings.dst_code;
-			} else {
-				this.current_text_lang =
-					this.translate_chapter_settings.src_code;
-			}
 		},
 		clickNavigation(type) {
 			if (type === "next" && this.next_link) {
@@ -389,24 +328,33 @@ export default {
 				this.loadChapterFromUrl(this.prev_link);
 			}
 		},
+		send_data_to_translate() {
+			if (this.auto_translate || this.is_destination_lang) {
+				this.translateChapter();
+			}
+		},
 		translateChapter() {
 			this.translating = true;
 			let kwargs = {
 				service: this.service,
 				dst: this.dst,
 				src: this.src,
-				parts: this.translate_services.find((x) => x.slug === this.service)
-					.max_pages,
-				paragraphs: Object.keys(
-					this.translated_text_data[this.service].data
+				parts: this.translate_services.find(
+					(x) => x.slug === this.service
+				).max_pages,
+				paragraphs: this.current_chapter.data.get_untran_text(
+					this.service,
+					this.dst
 				),
 			};
 			VariousServices.translateArray({
 				...kwargs,
-				obj_to_fill: this.translated_text_data[this.service].data,
+				obj_to_fill:
+					this.current_chapter.data.translated_text[this.service][
+						this.dst
+					],
 			}).then(
 				(resp) => {
-					this.translated_text_data[this.service].translated = true;
 					this.translating = false;
 					console.log(resp);
 				},
@@ -416,18 +364,6 @@ export default {
 					this.translating_error = true;
 				}
 			);
-			if (!this.translated_text_data[this.service].title) {
-				VariousServices.translateArray({
-					...kwargs,
-					paragraphs: [this.original_text_data.title],
-					parts: 1,
-					skip_init: true,
-				}).then((resp) => {
-					this.translated_text_data[this.service].title =
-						resp[0].data[this.original_text_data.title];
-					console.log(this.translated_text_data[this.service].title);
-				});
-			}
 		},
 		text_lang_change(new_) {
 			this.current_text_lang = new_;
@@ -453,13 +389,11 @@ export default {
 				this.translateChapter();
 			}
 		},
-		auto_translate(new_) {
-			console.log(this.is_source_lang);
-		},
 		service(new_) {
-			if (!this.translated) {
-				this.init_translated_text_data();
-			}
+			this.current_chapter.data.prepopulate_translated_text(
+				new_,
+				this.dst
+			);
 			if (
 				!this.translated &&
 				!this.translating &&
@@ -475,10 +409,12 @@ export default {
 			}
 		},
 		dst(new_, old) {
+			this.current_chapter.data.prepopulate_translated_text(
+				this.service,
+				new_
+			);
 			if (this.current_text_lang === old) {
 				this.current_text_lang = new_;
-				this.clear_translated_text_data();
-				this.init_translated_text_data();
 				this.translateChapter();
 			}
 		},
@@ -539,5 +475,28 @@ export default {
 	border-top: 1px solid #dcdcdc;
 	border-bottom: 1px solid #dcdcdc;
 	width: 90%;
+}
+.text-wrapper p {
+	position: relative;
+	width: fit-content;
+}
+.text-replace {
+	position: absolute;
+	top: 0px;
+	right: -10px;
+	width: 1em;
+	height: 1em;
+	color: lightgrey;
+	visibility: hidden;
+}
+.text-replace:hover {
+	color: blue;
+	border: 1px solid blue;
+}
+.text-replace svg {
+	vertical-align: 0%;
+}
+.text-wrapper p:hover .text-replace {
+	visibility: visible;
 }
 </style>

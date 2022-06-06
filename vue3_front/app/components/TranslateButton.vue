@@ -62,10 +62,10 @@
 			</ul>
 		</div>
 		<template v-if="translating_error">
-			<h3 class="fs-3 ml-5 mt-3">Failed to translate</h3>
+			<h3 class="fs-3 ms-3 mt-3">Failed to translate</h3>
 			<button
 				type="button"
-				class="btn mt-2 ml-5 mb-3 retry-button py-1 px-3 shadow-none"
+				class="btn mt-2 ms-3 mb-3 retry-button py-1 px-3 shadow-none"
 				@click="try_again"
 			>
 				Try again
@@ -73,7 +73,7 @@
 		</template>
 		<template v-else>
 			<div
-				class="ml-5 mt-2 d-flex justify-content-start lang-button-conteiner"
+				class="ms-3 mt-2 d-flex justify-content-start lang-button-conteiner"
 			>
 				<button
 					@click="change_text_lang(src)"
@@ -99,7 +99,7 @@
 					</template>
 				</button>
 			</div>
-			<div class="form-check mt-3 mb-4 ml-5">
+			<div class="form-check mt-3 mb-4 ms-3">
 				<input
 					class="form-check-input shadow-none"
 					type="checkbox"
@@ -111,7 +111,7 @@
 				</label>
 			</div>
 		</template>
-		<div class="dropdown-bottom py-3 border-top">
+		<div class="dropdown-bottom py-3 px-3 border-top">
 			<Select
 				class="ml-5"
 				:now_val="service"
@@ -293,7 +293,14 @@ export default {
 }
 .dropdown-menu.translate {
 	min-width: 400px;
-	left: -15% !important;
+	left: calc(100vw - 115%) !important;
+}
+@media (max-width: 500px) {
+	.dropdown-menu.translate {
+		width: 100%;
+		min-width: 100%;
+		left: auto !important;
+	}
 }
 .lang-button {
 	min-width: 60px;
