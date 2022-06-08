@@ -7,10 +7,20 @@
 					{{ title }}
 				</h1></a
 			>
-			<div class="col-lg-6 mx-auto">
-				<span class="chapter-name mb-4 d-block" v-if="chapter_name">
+			<div>
+				<div class="d-flex justify-content-center">
+					<div>
+						<NovelParagraph
+							:is_dst_lang="is_destination_lang"
+							:lang="current_text_lang"
+							:p_data="chapter_name"
+							:service="service"
+						/>
+					</div>
+				</div>
+				<!-- <span class="chapter-name mb-4 d-block" v-if="chapter_name">
 					{{ chapter_name }}
-				</span>
+				</span> -->
 				<div class="d-flex justify-content-center">
 					<button
 						type="button"
@@ -71,14 +81,20 @@
 			<div class="text-wrapper py-4">
 				<Loading :message="'Load chapter '" v-if="loading" />
 				<template v-if="text.length && !loading">
-					<p v-for="(p, index) in text" :key="index">
-						{{ p }}
-						<button
+					<template v-for="(p, index) in text" :key="index">
+						<!-- {{ p }} -->
+						<NovelParagraph
+							:is_dst_lang="is_destination_lang"
+							:lang="current_text_lang"
+							:p_data="p"
+							:service="service"
+						/>
+						<!-- <button
 							class="btn p-0 border-0 text-replace shadow-none"
 						>
 							<Icon icon="ri:translate" />
-						</button>
-					</p>
+						</button> -->
+					</template>
 				</template>
 				<template v-if="author_note.length && !loading">
 					<hr class="mx-4" />
@@ -123,17 +139,20 @@
 </template>
 
 <script>
+import NovelParagraph from "../components/NovelParagraph.vue";
+import SideBarChapter from "../components/SideBarChapter.vue";
+import Loading from "../components/Loading.vue";
+import TranslateButton from "../components/TranslateButton.vue";
+
 import { NovelService } from "../services/novel.service";
 import { TranslateService } from "../services/translate.services";
 import { default as VariousServices } from "../services/various.services";
-import SideBarChapter from "../components/SideBarChapter.vue";
-import Loading from "../components/Loading";
-import TranslateButton from "../components/TranslateButton.vue";
+import Chapter from "../models/novel.chapter";
+
 import { Icon } from "@iconify/vue";
 import googleTranslate from "@iconify-icons/mdi/google-translate";
 import settingsLine from "@iconify-icons/clarity/settings-line";
 import listUnordered from "@iconify-icons/codicon/list-unordered";
-import Chapter from "../models/novel.chapter";
 
 export default {
 	name: "NovelChapter",
@@ -142,7 +161,13 @@ export default {
 		settings: "#offcanvas",
 	},
 
-	components: { Loading, SideBarChapter, Icon, TranslateButton },
+	components: {
+		Loading,
+		SideBarChapter,
+		Icon,
+		TranslateButton,
+		NovelParagraph,
+	},
 	props: {
 		service_name: String,
 		lang_code: String,
@@ -158,18 +183,11 @@ export default {
 				listUnordered,
 			},
 			current_chapter: "",
-			open_settings_collapses: ["style"],
 			response_data: "",
+			open_settings_collapses: ["style"],
 			loading: false,
 			translating: false,
 			translating_error: false,
-			original_text_data: {
-				text: [],
-				author_note: [],
-				title: "",
-				chapter_name: "",
-			},
-			translated_text_data: {},
 			current_text_lang:
 				this.$store.state.translate_chapter_settings.src_code,
 		};
@@ -476,7 +494,7 @@ export default {
 	border-bottom: 1px solid #dcdcdc;
 	width: 90%;
 }
-.text-wrapper p {
+/* .text-wrapper p {
 	position: relative;
 	width: fit-content;
 }
@@ -498,5 +516,5 @@ export default {
 }
 .text-wrapper p:hover .text-replace {
 	visibility: visible;
-}
+} */
 </style>

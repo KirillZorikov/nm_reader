@@ -98,28 +98,42 @@ class ChapterData {
 		return title;
 	}
 	get_chapter_name(is_src_lang, trans_service, lang_code) {
-		let chapter_name = this.original_text.chapter_name;
-		if (is_src_lang) {
-			return chapter_name;
-		}
-		if (this.translated_text[trans_service][lang_code][chapter_name]) {
-			chapter_name =
-				this.translated_text[trans_service][lang_code][chapter_name];
-		}
-		return chapter_name;
+		return this.prepare_paragraph(this.original_text.chapter_name);
+		// let chapter_name = { original: this.original_text.chapter_name };
+		// if (lang_code in this.translated_text[trans_service]) {
+		// 	chapter_name.translated =
+		// 		this.translated_text[trans_service][lang_code][chapter_name];
+		// }
+		// return chapter_name;
+
+		// let chapter_name = this.original_text.chapter_name;
+		// if (is_src_lang) {
+		// 	return chapter_name;
+		// }
+		// if (this.translated_text[trans_service][lang_code][chapter_name]) {
+		// 	chapter_name =
+		// 		this.translated_text[trans_service][lang_code][chapter_name];
+		// }
+		// return chapter_name;
 	}
 	get_text(is_src_lang, trans_service, lang_code) {
-		let text = this.original_text.text;
-		if (is_src_lang) {
-			return text;
-		}
-		text = Array.from(
-			{ length: text.length },
-			(_, i) =>
-				this.translated_text[trans_service][lang_code][text[i]] ||
-				text[i]
-		);
+		let text = [];
+		this.original_text.text.forEach((val) => {
+			text.push(this.prepare_paragraph(val));
+		});
 		return text;
+
+		// let text = this.original_text.text;
+		// if (is_src_lang) {
+		// 	return text;
+		// }
+		// text = Array.from(
+		// 	{ length: text.length },
+		// 	(_, i) =>
+		// 		this.translated_text[trans_service][lang_code][text[i]] ||
+		// 		text[i]
+		// );
+		// return text;
 	}
 	get_author_note(is_src_lang, trans_service, lang_code) {
 		let author_note = this.original_text.author_note;
@@ -134,6 +148,21 @@ class ChapterData {
 				] || author_note[i]
 		);
 		return author_note;
+	}
+
+	prepare_paragraph(paragraph) {
+		let prepared_paragraph = { original: paragraph, translated: {} };
+		store.state.translate_services.forEach((service) => {
+			prepared_paragraph.translated[service["slug"]] = {};
+			let entries = Object.entries(this.translated_text[service.slug]);
+			for (const [lang_code, obj_trans] of entries) {
+				if (obj_trans[paragraph]) {
+					prepared_paragraph.translated[service["slug"]][lang_code] =
+						obj_trans[paragraph];
+				}
+			}
+		});
+		return prepared_paragraph;
 	}
 }
 
